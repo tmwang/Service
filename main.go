@@ -103,9 +103,9 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
 }
 
 	// TODO (student questions) save Post into BT as well
-}
 
-}
+
+
 
 // Save a post to ElasticSearch
 func saveToES(p *Post, id string) {
