@@ -8,6 +8,9 @@ import  ("fmt"
 	"strconv"
 	"github.com/pborman/uuid"
 	"reflect"
+	"context"
+	"cloud.google.com/go/bigtable"
+
 )
 
 
@@ -75,6 +78,32 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
 	id := uuid.New()
 	// Save to ES.
 	saveToES(&p, id)
+	ctx := context.Background()
+	// you must update project name here
+	bt_client, err := bigtable.NewClient(ctx, PROJECT_ID, BT_INSTANCE)
+	if err != nil {
+		panic(err)
+		return
+	}
+	tbl := bt_client.Open("post")
+	mut := bigtable.NewMutation()
+	t := bigtable.Now()
+
+	mut.Set("post", "user", t, []byte(p.User))
+	mut.Set("post", "message", t, []byte(p.Message))
+	mut.Set("location", "lat", t, []byte(strconv.FormatFloat(p.Location.Lat, 'f', -1, 64)))
+	mut.Set("location", "lon", t, []byte(strconv.FormatFloat(p.Location.Lon, 'f', -1, 64)))
+
+	err = tbl.Apply(ctx, id, mut)
+	if err != nil {
+		panic(err)
+		return
+	}
+	fmt.Printf("Post is saved to BigTable: %s\n", p.Message)
+}
+
+	// TODO (student questions) save Post into BT as well
+}
 
 }
 
@@ -110,10 +139,10 @@ const (
 	TYPE = "post"
 	DISTANCE = "200km"
 	// Needs to update
-	//PROJECT_ID = "around-xxx"
-	//BT_INSTANCE = "around-post"
+	PROJECT_ID = "named-inn-199302"
+	BT_INSTANCE = "around-post"
 	// Needs to update this URL if you deploy it to cloud.
-	ES_URL = "http://35.193.45.135:9200"
+	ES_URL = "http://35.184.127.74:9200"
 )
 
 
